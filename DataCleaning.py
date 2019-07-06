@@ -7,9 +7,23 @@ Helper Functions for Data Cleaning Notebook
 Class: GLOBAL 150Q
 """
 
-def missing_proportion(col_data):
-	"""Takes in column data pontentially with missing (NaN) values and returns the proportion
-	of missing values rounded to 3 decimal places. Supports pandas Series and Datascience Table.
+def encode_nans(table, column_name):
+	"""Takes in a Table and column name and converts all the string NaN entries to standard None types
+	which are easier for detection by null checker methods."""
+	def replace(entry):
+		if entry == 'nan' or pd.isnull(entry):
+			return None
+		else: 
+			return entry
+	assert (isinstance(table, Table)), "Input not a supported type."
+	column = table.apply(replace, column_name)
+	table.append_column(column_name, column) 
+
+
+def missing_proportion(table, column_name):
+	"""Takes in a table and column name whose column pontentially has missing (NaN) values and returns 
+	the proportion of missing values in that column, rounded to 3 decimal places. Supports pandas Series 
+	and Datascience Tables.
 
 	>>> series = pd.Series([1, np.nan, 3])
 	>>> missing_proportion(series)
@@ -19,74 +33,40 @@ def missing_proportion(col_data):
 	>>> missing_proportion(col_data)
 	0.333
 	"""
-	assert (isinstance(col_data, Table) or isinstance(col_data, pd.Series)), "Input not a supported type."
-	if isinstance(col_data, Table):
-		assert (col_data.num_columns == 1), "Too many columns. Input a table with only one column."
-	if isinstance(col_data, pd.Series):
-		total_missing = col_data.isna().sum()
-		prop_missing = total_missing/len(col_data)
-		return round(prop_missing, 3)
-	else:
-		prop_missing = col_data.where(0, np.isnan).num_rows/col_data.num_rows
-		return round(prop_missing, 3)
-
-def drop_missing(table, columns = False):
-	"""Takes in table with pontentially with missing (NaN) values and drops the rows or columns which
-	contain missing values. Returns the resulting table. Supports pandas DataFrames and datascience 
-	Tables. By default, rows with missing values will be dropped unless columns = True is specified
-	as an argument. 
-
-	>>> table = pd.DataFrame({"first":[1, np.nan, 3], "second":[1, 2, 3]})
-	>>> drop_missing(table)
-		first	second	
-	0     1        1
-	1     3        3
-		
-	>>> table = pd.DataFrame({"first":[1, np.nan, 3], "second":[1, 2, 3]})
-	>>> drop_missing(table, columns = True)
-		second
-	0	   1
-	1	   2
-	2	   3
-
-	>>> table = Table.from_columns_dict({"first":[1, np.nan, 3], "second":[1, 2, 3]})
-	>>> drop_missing(table)
-	first	second
-	  1        1
-	  3        3
-
-	>>> table = Table.from_columns_dict({"first":[1, np.nan, 3], "second":[1, 2, 3]})
-	>>> drop_missing(table, columns  = True)
-	second
-	   1
-	   2
-	   3
-	"""
 	assert (isinstance(table, Table) or isinstance(table, pd.DataFrame)), "Input not a supported type."
-	assert (isinstance(columns, bool)), "Input is invalid. Enter either True or False."
-	if isinstance(table, Table):
-		if columns == False:
-			new_table = Table(np.asarray(table.labels))
-			new_table = new_table.with_row(list(np.zeros(table.num_columns)))
-			for row in table.rows:
-				if True in np.isnan(np.array(row)):
-					continue
-				else:
-					new_table = new_table.with_row(row)
-			new_table = new_table.exclude(0)
-			return new_table
-		else:
-			new_table = Table()
-			a = [label for label in table.labels]
-			b = [col for col in table.columns]
-			for label, col in list(zip(a, b)):
-				if True in np.isnan(np.array(col)):
-					continue
-				else:
-					new_table = new_table.with_column(label, col)
-			return new_table
+	if isinstance(table, pd.DataFrame):
+		assert (column_name in list(table.columns.values)), "Input a valid column name."
+		total_missing = table[column_name].isna().sum()
+		prop_missing = total_missing/len(table)
+		return round(prop_missing, 3)
 	else:
-		if columns == False:
-			return table.dropna()
+		encode_nans(table, column_name)
+		assert (column_name in list(table.labels)), 'Input a valid column name.'
+		prop_missing = table.where(column_name, pd.isnull).num_rows/table.num_rows
+		return round(prop_missing, 3)
+
+
+
+def drop_missing_rows(table, column_name = None):
+	"""Takes in Datascience Table with pontentially with missing (NaN) values and drops the rows which
+	contain missing values with respect to a particular column. Returns the resulting table. 
+	"""
+	assert isinstance(table, Table), "Input not a supported type."
+	assert (column_name in table.labels), "Input is invalid. Enter a valid column name."
+	encode_nans(table, column_name)
+	omitted_indices = []
+	for index in range(len(table.column(column_name))):
+		if pd.isnull(table.column(column_name).item(index)):
+			omitted_indices.append(index)
+	new_table = Table(np.asarray(table.labels))
+	new_table = new_table.with_row(list(np.zeros(table.num_columns)))
+	counter = 0
+	for row in table.rows:
+		if counter in omitted_indices:
+			counter += 1
+			continue
 		else:
-			return table.dropna(axis = 1)
+			new_table = new_table.with_row(row)
+			counter += 1
+	new_table = new_table.exclude(0)
+	return new_table 
