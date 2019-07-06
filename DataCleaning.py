@@ -24,14 +24,6 @@ def missing_proportion(table, column_name):
 	"""Takes in a table and column name whose column pontentially has missing (NaN) values and returns 
 	the proportion of missing values in that column, rounded to 3 decimal places. Supports pandas Series 
 	and Datascience Tables.
-
-	>>> series = pd.Series([1, np.nan, 3])
-	>>> missing_proportion(series)
-	0.333
-
-	>>> table_column = Table.from_columns_dict({'col_1':[np.nan, 0 ,1]})
-	>>> missing_proportion(col_data)
-	0.333
 	"""
 	assert (isinstance(table, Table) or isinstance(table, pd.DataFrame)), "Input not a supported type."
 	if isinstance(table, pd.DataFrame):
