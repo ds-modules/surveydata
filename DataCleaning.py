@@ -1,6 +1,7 @@
 from datascience import * 
 import pandas as pd 
 import numpy as np 
+import re 
 
 """Summer 2019 Data Science Education Team 
 Helper Functions for Data Cleaning Notebook 
@@ -17,8 +18,57 @@ def encode_nans(table, column_name):
 			return entry
 	assert (isinstance(table, Table)), "Input not a supported type."
 	column = table.apply(replace, column_name)
-	table.append_column(column_name, column) 
+	return table.append_column(column_name, column) 
 
+
+def to_numerical(table, column_name):
+    """Takes in a Table and column name and converts all the numbera coded as stringa to integer."""
+    def replace(entry):
+        return float(entry)
+    assert (isinstance(table, Table)), "Input not a supported type."
+    column = table.apply(replace, column_name)
+    return table.append_column(column_name, column) 
+    
+    
+def get_first_selection(table, column_name):
+    """Takes in a Table and column name, get the first selection of participants for a question."""
+    def replace(entry):
+        if pd.isnull(entry):
+            return None 
+        else:
+            return re.sub(r'(,\w*\s*\w*)+', '', entry)
+    assert (isinstance(table, Table)), "Input not a supported type."
+    column = table.apply(replace, column_name)
+    return table.append_column(column_name, column) 
+
+
+def get_mixed_category(table, column_name, string):
+    """Takes in a Table and column name, if the parcitipate choose more than one answer, label it as 'Mixed String' category."""
+    def replace(entry):
+        if pd.isnull(entry):
+            return None 
+        elif ',' in entry:
+            return 'Mixed ' + string
+        else: 
+            return entry
+    assert (isinstance(table, Table)), "Input not a supported type."
+    column = table.apply(replace, column_name)
+    return table.append_column(column_name, column)
+
+
+def convert_degree_to_num(table, column_name, levels):
+    """Takes in a Table, a column name, and a list of strings of variable levels. 
+       Modifies the input table, replace the column_name with a new column of numerical values representing degree."""
+    encode_nans(table, column_name)
+    input_level_list = pd.Series(levels).unique()
+    level_list = pd.Series(table.column(column_name)).unique()
+    assert (len(levels) == len(level_list) | len(input_level_list) == len(level_list)), "Input list have differnt number of levels, please double check your input levels."
+    assert (sum([entry not in level_list for entry in levels]) == 0), "Input list has different items, please check your spelling and level name."
+    
+    for i in range(len(levels)):
+        table.column(column_name)[table.column(column_name) == levels[i]] = i
+
+    
 
 def missing_proportion(table, column_name):
 	"""Takes in a table and column name whose column pontentially has missing (NaN) values and returns 
@@ -30,14 +80,30 @@ def missing_proportion(table, column_name):
 		assert (column_name in list(table.columns.values)), "Input a valid column name."
 		total_missing = table[column_name].isna().sum()
 		prop_missing = total_missing/len(table)
-		return round(prop_missing, 3)
+		return round(prop_missing, 2)
 	else:
 		encode_nans(table, column_name)
 		assert (column_name in list(table.labels)), 'Input a valid column name.'
 		prop_missing = table.where(column_name, pd.isnull).num_rows/table.num_rows
-		return round(prop_missing, 3)
+		return round(prop_missing, 2)
 
-
+    
+    
+def drop_nonserious_rows(table, column_name):
+    """Takes in a table and column name. Returns a new table without rows that have missing values for all the columns that start from the given column_name. 
+    """
+    # encode table's nan as None 
+    for column in table.labels:
+        encode_nans(table, column)
+    full_df = table.to_df()
+    start_idx = table.column_index(column_name)
+    tbl = table.select(range(start_idx, table.num_columns))
+    df = tbl.to_df()
+    na_df = df.notna()
+    full_df = full_df[np.array(na_df.apply(np.sum, axis=1) != 0)]
+    return Table.from_df(full_df)
+    
+    
 
 def drop_missing_rows(table, column_name = None):
 	"""Takes in Datascience Table with pontentially with missing (NaN) values and drops the rows which
