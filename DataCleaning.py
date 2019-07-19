@@ -1,10 +1,11 @@
-from datascience import * 
-import pandas as pd 
-import numpy as np 
-import re 
+from datascience import *
+import pandas as pd
+import numpy as np
+import re
+import matplotlib.pyplot as plt
 
-"""Summer 2019 Data Science Education Team 
-Helper Functions for Data Cleaning Notebook 
+"""Summer 2019 Data Science Education Team
+Helper Functions for Data Cleaning Notebook
 Class: GLOBAL 150Q
 """
 
@@ -14,11 +15,11 @@ def encode_nans(table, column_name):
 	def replace(entry):
 		if entry == 'nan' or pd.isnull(entry):
 			return None
-		else: 
+		else:
 			return entry
 	assert (isinstance(table, Table)), "Input not a supported type."
 	column = table.apply(replace, column_name)
-	return table.append_column(column_name, column) 
+	return table.append_column(column_name, column)
 
 
 def to_numerical(table, column_name):
@@ -27,29 +28,29 @@ def to_numerical(table, column_name):
         return float(entry)
     assert (isinstance(table, Table)), "Input not a supported type."
     column = table.apply(replace, column_name)
-    return table.append_column(column_name, column) 
-    
-    
+    return table.append_column(column_name, column)
+
+
 def get_first_selection(table, column_name):
     """Takes in a Table and column name, get the first selection of participants for a question."""
     def replace(entry):
         if pd.isnull(entry):
-            return None 
+            return None
         else:
             return re.sub(r'(,\w*\s*\w*)+', '', entry)
     assert (isinstance(table, Table)), "Input not a supported type."
     column = table.apply(replace, column_name)
-    return table.append_column(column_name, column) 
+    return table.append_column(column_name, column)
 
 
 def get_mixed_category(table, column_name, string):
     """Takes in a Table and column name, if the parcitipate choose more than one answer, label it as 'Mixed String' category."""
     def replace(entry):
         if pd.isnull(entry):
-            return None 
+            return None
         elif ',' in entry:
             return 'Mixed ' + string
-        else: 
+        else:
             return entry
     assert (isinstance(table, Table)), "Input not a supported type."
     column = table.apply(replace, column_name)
@@ -57,22 +58,22 @@ def get_mixed_category(table, column_name, string):
 
 
 def convert_degree_to_num(table, column_name, levels):
-    """Takes in a Table, a column name, and a list of strings of variable levels. 
+    """Takes in a Table, a column name, and a list of strings of variable levels.
        Modifies the input table, replace the column_name with a new column of numerical values representing degree."""
     encode_nans(table, column_name)
     input_level_list = pd.Series(levels).unique()
     level_list = pd.Series(table.column(column_name)).unique()
     assert (len(levels) == len(level_list) | len(input_level_list) == len(level_list)), "Input list have differnt number of levels, please double check your input levels."
     assert (sum([entry not in level_list for entry in levels]) == 0), "Input list has different items, please check your spelling and level name."
-    
+
     for i in range(len(levels)):
         table.column(column_name)[table.column(column_name) == levels[i]] = i
 
-    
+
 
 def missing_proportion(table, column_name):
-	"""Takes in a table and column name whose column pontentially has missing (NaN) values and returns 
-	the proportion of missing values in that column, rounded to 3 decimal places. Supports pandas Series 
+	"""Takes in a table and column name whose column pontentially has missing (NaN) values and returns
+	the proportion of missing values in that column, rounded to 3 decimal places. Supports pandas Series
 	and Datascience Tables.
 	"""
 	assert (isinstance(table, Table) or isinstance(table, pd.DataFrame)), "Input not a supported type."
@@ -87,12 +88,12 @@ def missing_proportion(table, column_name):
 		prop_missing = table.where(column_name, pd.isnull).num_rows/table.num_rows
 		return round(prop_missing, 2)
 
-    
-    
+
+
 def drop_nonserious_rows(table, column_name):
-    """Takes in a table and column name. Returns a new table without rows that have missing values for all the columns that start from the given column_name. 
+    """Takes in a table and column name. Returns a new table without rows that have missing values for all the columns that start from the given column_name.
     """
-    # encode table's nan as None 
+    # encode table's nan as None
     for column in table.labels:
         encode_nans(table, column)
     full_df = table.to_df()
@@ -102,12 +103,12 @@ def drop_nonserious_rows(table, column_name):
     na_df = df.notna()
     full_df = full_df[np.array(na_df.apply(np.sum, axis=1) != 0)]
     return Table.from_df(full_df)
-    
-    
+
+
 
 def drop_missing_rows(table, column_name = None):
 	"""Takes in Datascience Table with pontentially with missing (NaN) values and drops the rows which
-	contain missing values with respect to a particular column. Returns the resulting table. 
+	contain missing values with respect to a particular column. Returns the resulting table.
 	"""
 	assert isinstance(table, Table), "Input not a supported type."
 	assert (column_name in table.labels), "Input is invalid. Enter a valid column name."
@@ -127,4 +128,53 @@ def drop_missing_rows(table, column_name = None):
 			new_table = new_table.with_row(row)
 			counter += 1
 	new_table = new_table.exclude(0)
-	return new_table 
+	return new_table
+
+def extract_first_major(major):
+	if '/' in major:
+		return major.split('/')[0]
+	else:
+		return major
+
+def fix_major_formatting(data, column_name):
+	return data.with_column(column_name, data.apply(
+	extract_first_major, column_name))
+
+def counts_to_proportions(pivot):
+    first_name = pivot.labels[0]
+    first_values = pivot.column(first_name)
+    pivot = pivot.drop(first_name)
+    pivot_df = pivot.to_df()
+    sums = np.array([])
+    for col in pivot.labels:
+        sums = np.append(sums, np.sum(pivot.column(col)))
+    table2 = pivot_df.div(sums)
+    new_pivot = Table.from_df(table2)
+    new_pivot.append_column(first_name, first_values)
+    new_pivot.move_to_start(first_name)
+    return new_pivot
+
+def plot_bar_graph(pivot, column):
+    first_name = pivot.labels[0]
+    first_values = pivot.column(first_name)
+    pivot = pivot.drop(first_name)
+    plt.bar(first_values, pivot.column(column))
+    plt.ylabel('Proportion')
+    plt.title("{}".format(column))
+
+def compare_bar_graphs(pivot, column1, column2):
+	data1 = pivot.column(column1)
+	data2 = pivot.column(column2)
+	indices = range(len(data1))
+	names = pivot.column(0)
+	# Calculate optimal width
+	width = np.min(np.diff(indices))/3
+	fig = plt.figure()
+	ax = fig.add_subplot(111)
+	ax.bar(indices-width/2.,data1,width,color='b',label='-Ymin')
+	ax.bar(indices+width/2.,data2,width,color='r',label='Ymax')
+	#tiks = ax.get_xticks().tolist()
+	plt.xticks(np.arange(3) + width /2, names)
+	plt.ylabel('Proportion')
+	plt.title("{} vs. {}".format(column1, column2))
+	plt.show()
