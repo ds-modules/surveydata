@@ -182,8 +182,12 @@ def compare_bar_graphs(pivot, column1, column2):
 
 def create_wordcloud(table, column):
 	all_words = ""
-	for word in table.column(column):
-	    all_words += word
+	for word in drop_missing_rows(table, column).column(column):
+	    if ',' in word:
+	        for part in word.split(','):
+	            all_words += part + " "
+	    else:
+	        all_words += word + " "
 	wordcloud = WordCloud().generate(all_words)
 	plt.title('Wordcloud for {}'.format(column))
 	plt.axis('off')
