@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import re
 import matplotlib.pyplot as plt
+from wordcloud import *
 
 """Summer 2019 Data Science Education Team
 Helper Functions for Data Cleaning Notebook
@@ -178,3 +179,12 @@ def compare_bar_graphs(pivot, column1, column2):
 	plt.ylabel('Proportion')
 	plt.title("{} vs. {}".format(column1, column2))
 	plt.show()
+
+def create_wordcloud(table, column):
+	all_words = ""
+	for word in table.column(column):
+	    all_words += word
+	wordcloud = WordCloud().generate(all_words)
+	plt.title('Wordcloud for {}'.format(column))
+	plt.axis('off')
+	plt.imshow(wordcloud);
