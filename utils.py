@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import re
 import matplotlib.pyplot as plt
+import seaborn as sns
+sns.set_style("whitegrid")
 from wordcloud import *
 
 """Summer 2019 Data Science Education Team
@@ -155,30 +157,20 @@ def counts_to_proportions(pivot):
     new_pivot.move_to_start(first_name)
     return new_pivot
 
-def plot_bar_graph(pivot, column):
+def plot_bar_chart(pivot, columns, title):
     first_name = pivot.labels[0]
     first_values = pivot.column(first_name)
     pivot = pivot.drop(first_name)
-    plt.bar(first_values, pivot.column(column))
-    plt.ylabel('Proportion')
-    plt.title("{}".format(column))
-
-def compare_bar_graphs(pivot, column1, column2):
-	data1 = pivot.column(column1)
-	data2 = pivot.column(column2)
-	indices = range(len(data1))
-	names = pivot.column(0)
-	# Calculate optimal width
-	width = np.min(np.diff(indices))/3
-	fig = plt.figure()
-	ax = fig.add_subplot(111)
-	ax.bar(indices-width/2.,data1,width,color='b',label='-Ymin')
-	ax.bar(indices+width/2.,data2,width,color='r',label='Ymax')
-	#tiks = ax.get_xticks().tolist()
-	plt.xticks(np.arange(3) + width /2, names)
+    filtered = pivot.select(columns)
+    filtered = filtered.with_column(first_name, first_values)
+    filtered.move_to_start(first_name)
+    df = filtered.to_df()
+    df2 = pd.melt(df, id_vars=[first_name])
+	sns.set(font_scale=1.5)
+	sns.factorplot(x = first_name, y = 'value', hue = 'variable', data = df2, kind = 'bar', size=6, aspect=1.2)
+	plt.title(title)
+	plt.xlabel('Category')
 	plt.ylabel('Proportion')
-	plt.title("{} vs. {}".format(column1, column2))
-	plt.show()
 
 def create_wordcloud(table, column):
 	all_words = ""
