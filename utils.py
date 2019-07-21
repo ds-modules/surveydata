@@ -40,7 +40,7 @@ def get_first_selection(table, column_name):
         if pd.isnull(entry):
             return None
         else:
-            return re.sub(r'(,\w*\s*\w*)+', '', entry)
+            return re.sub(r',.*', '', entry)
     assert (isinstance(table, Table)), "Input not a supported type."
     column = table.apply(replace, column_name)
     return table.append_column(column_name, column)
