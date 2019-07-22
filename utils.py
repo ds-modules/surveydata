@@ -190,7 +190,15 @@ def create_wordcloud(table, column):
                 all_words += part + " "
         else:
             all_words += word + " "
-    wordcloud = WordCloud().generate(all_words)
+    wordcloud = WordCloud(collocations = False).generate(all_words)
     plt.title('Wordcloud for {}'.format(column))
     plt.axis('off')
     plt.imshow(wordcloud)
+
+def scale_to_ideology(table, name):
+    dictionary = {1:'Liberal', 2:'Liberal',
+    3:'Liberal', 4:'Liberal', 5:'Moderate', 6:'Moderate', 7:'Conservative',
+    8:'Conservative', 9:'Conservative', 10:'Conservative'}
+    df = table.to_df()
+    df2 = df.replace({name:dictionary})
+    return Table().from_df(df2)
