@@ -26,6 +26,18 @@ def encode_nans(table, column_name):
     return table.append_column(column_name, column)
 
 
+
+def encode_nans_table(table):
+    """Takes in a Table and converts all the string NaN entries to standard None types
+        which are easier for detection by null checker methods."""
+    col_names = table.labels
+    for col in col_names :
+        table = encode_nans(table, col)
+
+    return table
+
+
+
 def to_numerical(table, column_name):
     """Takes in a Table and column name and converts all the numbera coded as stringa to integer."""
     def replace(entry):
