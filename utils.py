@@ -165,7 +165,7 @@ def counts_to_proportions(pivot):
     return new_pivot
 
 
-def plot_bar_chart(pivot, columns, title):
+def plot_bar_chart(pivot, columns, title, category):
     first_name = pivot.labels[0]
     first_values = pivot.column(first_name)
     pivot = pivot.drop(first_name)
@@ -174,8 +174,9 @@ def plot_bar_chart(pivot, columns, title):
     filtered.move_to_start(first_name)
     df = filtered.to_df()
     df2 = pd.melt(df, id_vars=[first_name])
+    df2 = df2.rename(columns = {"variable":category})
     sns.set(font_scale=1.5)
-    sns.factorplot(x=first_name, y='value', hue='variable',
+    sns.factorplot(x=first_name, y='value', hue=category,
                    data=df2, kind='bar', size=9, aspect=1.5)
     plt.title(title)
     plt.xlabel('Category')
