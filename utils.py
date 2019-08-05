@@ -5,6 +5,8 @@ import numpy as np
 import re
 import matplotlib.pyplot as plt
 import seaborn as sns
+from scipy.stats import chisquare
+
 sns.set_style("whitegrid")
 
 """Summer 2019 Data Science Education Team
@@ -208,10 +210,43 @@ def create_wordcloud(table, column):
     plt.axis('off')
     plt.imshow(wordcloud)
 
-def scale_to_ideology(table, name):
-    dictionary = {1:'Liberal', 2:'Liberal',
-    3:'Liberal', 4:'Liberal', 5:'Moderate', 6:'Moderate', 7:'Conservative',
-    8:'Conservative', 9:'Conservative', 10:'Conservative'}
-    df = table.to_df()
-    df2 = df.replace({name:dictionary})
-    return Table().from_df(df2)
+def load_dataset():
+    party_by_gender = Table(np.array(['Party', 'Gender']))
+    male_dem = list(np.array(['Democrat', 'Male']))
+    male_rep = list(np.array(['Republican', 'Male']))
+    fem_dem = list(np.array(['Democrat', 'Female']))
+    fem_rep = list(np.array(['Republican', 'Female']))
+    for _ in range(20):
+        party_by_gender = party_by_gender.with_row(male_dem)
+        party_by_gender = party_by_gender.with_row(fem_rep)
+    for _ in range(30):
+        party_by_gender = party_by_gender.with_row(male_rep)
+        party_by_gender = party_by_gender.with_row(fem_dem)
+    return party_by_gender
+
+def add_row_totals(table):
+    row_totals = np.array([])
+    for i in np.arange(table.num_rows):
+        all_counts = np.array(table.row(i)[1:])
+        row_sums = sum(all_counts)
+        row_totals = np.append(row_totals, row_sums)
+    return table.with_column('Row Total', row_totals)
+
+def add_column_totals(table):
+    data = table.drop(0)
+    col_sums = []
+    col_sums.append('Column Total')
+    for label in data.labels:
+        total = np.sum(data.column(label))
+        col_sums.append(total)
+    return table.with_row(col_sums)
+
+def chisquaretest(table):
+    lst = []
+    for var in list(zip(table.drop(0).drop(table.num_columns-2).take[0:table.num_rows - 1].values)):
+        lst.extend(var)
+    flatten = lambda l: [item for sublist in l for item in sublist]
+    lst = flatten(lst)
+    result = chisquare(lst)
+    print('The Chi-square statistic is {}'.format(result[0]))
+    return result
