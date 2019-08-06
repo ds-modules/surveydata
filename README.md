@@ -1,4 +1,4 @@
-# surveydata
+# Survey Data
 Module for GS150Q/PACS190
 
 Instructors: Crystal Chang, Tiffany Page
