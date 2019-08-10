@@ -190,8 +190,12 @@ def plot_bar_chart(pivot, columns, title, category):
     df2 = pd.melt(df, id_vars=[first_name])
     df2 = df2.rename(columns = {"variable":category})
     sns.set(font_scale=1.5)
+    sorted_list = [x for x in np.unique(df2[category])]
+    first_type  = type(sorted_list[0])
+    sorted_list = sorted(sorted_list, key = first_type)
     sns.factorplot(x=first_name, y='value', hue=category,
-                   data=df2, kind='bar', size=9, aspect=1.5)
+                   data=df2, kind='bar', size=9, aspect=1.5,
+                   hue_order = [str(y) for y in sorted_list])
     plt.title(title)
     plt.xlabel('Category')
     plt.ylabel('Proportion')
@@ -202,9 +206,9 @@ def create_wordcloud(table, column):
     for word in drop_missing_rows(table, column).column(column):
         if ',' in word:
             for part in word.split(','):
-                all_words += part + " "
+                all_words += part.lower() + " "
         else:
-            all_words += word + " "
+            all_words += word.lower() + " "
     wordcloud = WordCloud(collocations = False).generate(all_words)
     plt.title('Wordcloud for {}'.format(column))
     plt.axis('off')
