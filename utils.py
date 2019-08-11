@@ -5,7 +5,7 @@ import numpy as np
 import re
 import matplotlib.pyplot as plt
 import seaborn as sns
-from scipy.stats import chisquare
+from scipy.stats import chi2_contingency
 
 sns.set_style("whitegrid")
 
@@ -245,12 +245,35 @@ def add_column_totals(table):
         col_sums.append(total)
     return table.with_row(col_sums)
 
-def chisquaretest(table):
-    lst = []
-    for var in list(zip(table.drop(0).drop(table.num_columns-2).take[0:table.num_rows - 1].values)):
-        lst.extend(var)
-    flatten = lambda l: [item for sublist in l for item in sublist]
-    lst = flatten(lst)
-    result = chisquare(lst)
-    print('The Chi-square statistic is {}'.format(result[0]))
-    return result
+def chi_expected_values(contingency):
+    """Calculates expected values of contingency table, given that the table
+    is in proper format, with Row Total column and Column Total row."""
+    #Deprecated
+    total_responses = contingency.column(contingency.num_columns - 1).item(-1)
+    expected_values = []
+    for col_index in range(1, contingency.num_columns - 1):
+        for row_index in range(0, contingency.num_rows - 1):
+            column_total = contingency.column(col_index).item(-1)
+            row_total = contingency.row(row_index).item(-1)
+            expected_values.append((column_total*row_total)/total_responses)
+    return np.array(expected_values)
+
+def prepare_pivot_values(contingency):
+    """Returns actual values of contingency table, given that the table
+    is in proper format, with Row Total column and Column Total row"""
+    actual_values = []
+    for col_index in range(1, contingency.num_columns - 1):
+        col_data = []
+        for row_index in range(0, contingency.num_rows - 1):
+            col_data.append(contingency[col_index][row_index])
+        actual_values.append(col_data)
+    return np.array(actual_values)
+
+def chisquaretest(contingency):
+    values = prepare_pivot_values(contingency)
+    output = chi2_contingency(values, correction = False)
+    print('The Expected values are \n {}'.format(output[3]))
+    print()
+    print('The Chi-square statistic is {}'.format(output[0]))
+    print()
+    print('The p-value is {}'.format(output[1]))
