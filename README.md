@@ -2,7 +2,7 @@
 ## Module for GS150Q/PACS190 (Fall 2019)
 
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/ds-modules/surveydata/master)
-[![Binder](https://img.shields.io/badge/Launch-UCB%20Datahub-blue.svg)](http://datahub.berkeley.edu/user-redirect/interact?account=ds-modules&repo=surveydata&branch=master&path=)
+[![Binder](https://img.shields.io/badge/Launch-UCB%20Datahub-blue.svg)](https://datahub.berkeley.edu/hub/user-redirect/git-pull?repo=https%3A%2F%2Fgithub.com%2Fds-modules%2Fsurveydata&urlpath=tree%2Fsurveydata%2F)
 
 -----
 
