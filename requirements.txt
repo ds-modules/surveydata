@@ -1,0 +1,2 @@
+ipython==7.8.0
+datascience==0.15.1
