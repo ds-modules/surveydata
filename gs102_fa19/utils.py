@@ -89,6 +89,15 @@ def convert_degree_to_num(table, column_name, levels):
     for i in range(len(levels)):
         table.column(column_name)[table.column(column_name) == levels[i]] = i
 
+def convert_num_to_text(table, column_name, values):
+    encode_nans(table, column_name)
+    input_level_list = pd.Series(values).unique()
+    level_list = pd.Series(table.column(column_name)).unique()
+    assert (len(values) == len(level_list) | len(input_level_list) == len(level_list)
+            ), "Input list have differnt number of levels, please double check your input levels."
+    for i in range(len(level_list)):
+        curr_value = level_list[i]
+        table.column(column_name)[table.column(column_name) == curr_value] = values[curr_value - 1]
 
 def missing_proportion(table, column_name):
     """Takes in a table and column name whose column pontentially has missing (NaN) values and returns
