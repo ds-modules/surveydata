@@ -90,14 +90,19 @@ def convert_degree_to_num(table, column_name, levels):
         table.column(column_name)[table.column(column_name) == levels[i]] = i
 
 def convert_num_to_text(table, column_name, values):
+    if table.column(column_name).dtype == np.dtype('<U16'):
+        return
     encode_nans(table, column_name)
     input_level_list = pd.Series(values).unique()
     level_list = pd.Series(table.column(column_name)).dropna().unique()
     assert (len(values) == len(level_list) | len(input_level_list) == len(level_list)
             ), "Input list have differnt number of levels, please double check your input levels."
-    for i in range(len(level_list)):
-        curr_value = int(level_list[i])
-        table.column(column_name)[table.column(column_name) == curr_value] = values[curr_value - 1]
+    new_values = [''] * len(table.column(column_name))
+    for i in range(len(table.column(column_name))):
+        curr_value = int(table.column(column_name)[i])
+        new_values[i] = values[curr_value - 1]
+        
+    table[column_name] = new_values
 
 def missing_proportion(table, column_name):
     """Takes in a table and column name whose column pontentially has missing (NaN) values and returns
@@ -280,9 +285,9 @@ def prepare_pivot_values(contingency):
 
 def chisquaretest(contingency):
     values = prepare_pivot_values(contingency)
-    output = chi2_contingency(values, correction = False)
-    print('The Expected values are \n {}'.format(output[3]))
-    print()
-    print('The Chi-square statistic is {}'.format(output[0]))
-    print()
-    print('The p-value is {}'.format(output[1]))
+    results = chi2_contingency(values, correction = False)
+    
+    output = {'expected': results[3],
+             'chi2 statistic': results[0],
+             'p-value': results[1]}
+    return output
