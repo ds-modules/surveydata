@@ -93,14 +93,13 @@ def convert_num_to_text(table, column_name, values):
     if table.column(column_name).dtype == np.dtype('<U16'):
         return
     encode_nans(table, column_name)
-    input_level_list = pd.Series(values).unique()
-    level_list = pd.Series(table.column(column_name)).dropna().unique()
-    assert (len(values) == len(level_list) | len(input_level_list) == len(level_list)
-            ), "Input list have differnt number of levels, please double check your input levels."
     new_values = [''] * len(table.column(column_name))
     for i in range(len(table.column(column_name))):
-        curr_value = int(table.column(column_name)[i])
-        new_values[i] = values[curr_value - 1]
+        if table.column(column_name)[i] is None:
+            new_values[i] = None
+        else:
+            curr_value = int(table.column(column_name)[i])
+            new_values[i] = values[curr_value - 1]
         
     table[column_name] = new_values
 
@@ -177,20 +176,12 @@ def fix_major_formatting(data, column_name):
     return data.with_column(column_name, data.apply(
         extract_first_major, column_name))
 
-
-def counts_to_proportions(pivot):
-    first_name = pivot.labels[0]
-    first_values = pivot.column(first_name)
-    pivot = pivot.drop(first_name)
-    pivot_df = pivot.to_df()
-    sums = np.array([])
-    for col in pivot.labels:
-        sums = np.append(sums, np.sum(pivot.column(col)))
-    table2 = pivot_df.div(sums)
-    new_pivot = Table.from_df(table2)
-    new_pivot.append_column(first_name, first_values)
-    new_pivot.move_to_start(first_name)
-    return new_pivot
+def counts_to_proportions(pivot_table):
+    df = pivot_table.to_df()
+    df.set_index(df.columns[0], inplace=True)
+    df = df.apply(lambda row: row / row.sum(), axis=1)
+    df.reset_index(inplace=True)
+    return Table.from_df(df)
 
 
 def plot_bar_chart(pivot, columns, title, category):
