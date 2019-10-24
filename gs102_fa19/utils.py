@@ -282,3 +282,8 @@ def chisquaretest(contingency):
              'chi2 statistic': results[0],
              'p-value': results[1]}
     return output
+
+def get_p_value(contingency):
+    values = prepare_pivot_values(contingency)
+    results = chi2_contingency(values, correction = False)
+    return results[1]
