@@ -193,8 +193,8 @@ def plot_bar_chart(pivot, columns, title, category):
     sorted_list = [x for x in np.unique(df2[category])]
     first_type  = type(sorted_list[0])
     sorted_list = sorted(sorted_list, key = first_type)
-    sns.factorplot(x=first_name, y='value', hue=category,
-                   data=df2, kind='bar', size=9, aspect=1.5,
+    sns.catplot(x=first_name, y='value', hue=category,
+                   data=df2, kind='bar', height=9, aspect=1.5,
                    hue_order = [str(y) for y in sorted_list])
     plt.title(title)
     plt.xlabel('Category')
